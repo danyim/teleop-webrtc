@@ -1,0 +1,68 @@
+syntax = "proto3";
+
+package teleop;
+
+// SDPStatus describes where the webrtc connection is at
+enum SDPStatus {
+    Offered = 0;
+    Answered = 1;
+}
+
+// RTCStatus describes the connection status of the peers via webrtc
+enum RTCStatus {
+    Connected = 0;
+    Disconnected = 1;
+}
+
+// VideoRequest asks a vehicle to generate and return an SDP offer for a video
+// stream from a specific camera.
+message VideoRequest {
+    // ID of the camera
+    string camera = 1;
+
+    // ID of the webrtc connection
+    string connection_id = 2;
+
+    /// Width of video
+    int32 width = 3;
+
+    /// Height of video
+    int32 height = 4;
+}
+
+// SDPRequest contains all of the information needed for an SDP offer or answer.
+// This is used in setting up a webrtc connection
+message SDPRequest {
+    // Status of the request should be either offered or answered
+    SDPStatus status = 3;
+
+    // SDP offer body in string form
+    string sdp = 4;
+
+    // ID of the webrtc connection
+    string connection_id = 5;
+}
+
+// SDPConfirmation lets us know if this round of offer/answer worked
+message SDPConfirmation {
+    // Letting us know if this round of offer/answer got the agents connected
+    bool connected = 1;
+
+    // ID of the webrtc connection
+    string connection_id = 2;
+}
+
+// ICECandidate allows for new candidates to be discovered and shared after an offer is made
+message ICECandidate {
+    // Connection information for the new candidate
+    string candidate = 1;
+
+    // Type of media offered i.e. audio/video
+    string sdp_mid = 2;
+
+    // Index of media offered
+    int32 sdp_mline_index = 3;
+
+    // ID of the webrtc connection
+    string connection_id = 4;
+}

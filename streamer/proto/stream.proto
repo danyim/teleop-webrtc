@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package streamer;
+
+/// Stream represents options for a ZmqVideoCapturer
+message Stream {
+    /// Address of ZMQ socket to which we should subscribe
+    string address = 1;
+
+    /// ZMQ topic to which we should subscribe
+    string topic = 2;
+
+    /// Width of image streamed over the network (does not have to match input image dimensions)
+    int32 output_width = 3;
+
+    /// Height of image streamed over the network (does not have to match input image dimensions)
+    int32 output_height = 4;
+}

@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+package streamer;
+
+/// Address of a STUN server used in ICE handshake
+message STUNServer {
+    /// Address in format "host:port"
+    string address = 1;
+}
+
+/// Address of a TURN server used in ICE handshake
+message TURNServer {
+    /// Address in format "host:port"
+    string address = 1;
+
+    /// Username for authentication, or empty for no authentication
+    string username = 2;
+
+    /// Password for authentication, or empty for no authentication
+    string password = 3;
+}
+
+// Options contains configuration for the streamer.
+message SignalerOptions {
+    /// first allowed UDP port for incoming peer connections
+    int32 min_udp_port = 1;
+
+    /// last allowed UDP port for incoming peer connections
+    int32 max_udp_port = 2;
+
+    /// STUN servers for webrtc, in format "host:port"
+    repeated STUNServer stun_servers = 3;
+
+    /// TURN servers for webrtc
+    repeated TURNServer turn_servers = 4;
+}

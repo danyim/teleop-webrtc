@@ -1,0 +1,149 @@
+syntax = "proto3";
+
+import "packages/core/proto/timestamp.proto";
+import "packages/hal/proto/gps_telemetry.proto";
+import "packages/hal/proto/network_health_telemetry.proto";
+import "packages/hal/proto/device.proto";
+import "packages/perception/proto/detection.proto";
+import "packages/teleop/proto/webrtc.proto";
+import "packages/teleop/proto/camera.proto";
+
+package teleop;
+
+/// VehicleMessage is the message sent from vehicle to backend. It is the top-
+/// level protobuf that encompasses the entirety of each websocket frames.
+message VehicleMessage {
+    oneof payload {
+        Manifest manifest = 10;
+        CompressedImage frame = 20;
+        hal.GPSTelemetry gps = 30;
+        SDPRequest sdpRequest = 40;
+        SDPConfirmation sdpComfirmation = 50;
+        ICECandidate iceCandidate = 60;
+        DockingObservation docking_observation = 70;
+        DockingStatus docking_status = 80;
+        Confirmation confirmation = 90;
+        Status vehicle_status = 100;
+        perception.CameraAlignedBoxDetection detection = 110;
+        perception.CameraAligned3dBoxDetection detection3d = 120;
+    }
+}
+
+/// Encoding describes how a compressed image was encoded
+enum Encoding { JPEG = 0; }
+
+/// CompressedImage contains a compressed image.
+message CompressedImage {
+    /// Time when this image was captured
+    core.SystemTimestamp timestamp = 10;
+
+    /// The device that generated this frame
+    hal.Device device = 15;
+
+    /// Width of the image in pixels
+    int32 width = 20;
+
+    /// Height of the image in pixels
+    int32 height = 30;
+
+    /// Encoded image
+    bytes content = 40;
+
+    /// Encoding used in the content blob above
+    Encoding encoding = 50;
+}
+
+/// Manifest contains information about hardware present on a vehicle
+message Manifest {
+    /// Cameras attached to this vehicle
+    repeated Camera cameras = 20;
+}
+
+/// DockingStations contains a list of available (dock-able) docking stations from the vehicle at the specific timestamp
+message DockingObservation {
+    /// System timestamp corresponding to hal.CameraSample.systemTimestamp
+    core.SystemTimestamp timestamp = 10;
+
+    /// list of docking station ids
+    repeated uint64 station_ids = 20;
+}
+
+///
+/// Docking status
+///
+/// -----------O------------> (+x)
+///            |
+///            V (+y)
+///
+///               ^  ^
+///        ---    |t/
+///       /   --- |/
+///      /       -Q-
+///     /           ---
+///                    ---
+///                      /
+/// O : anchor point on the target station
+/// Q : anchor point on the vehicle
+///
+/// remaining_distance_x&y : Position of Q in O coordinate, in meters. (i.e., in this example : positive x & y value)
+/// remaining_angle : The angle t in the figure, in radian.
+message DockingStatus {
+    enum Status {
+        SUCCESS = 0;
+        FAILURE = 1;
+        INPROGRESS = 2;
+    }
+    Status status = 10;
+    float remaining_distance_x = 20;
+    float remaining_distance_y = 30;
+    float remaining_angle = 40;
+}
+
+/// Confirmation is used to let the client know that a command was recieved and proccessed
+/// by the vehicle or that it failed.
+message Confirmation {
+    /// The possible results of processing a command
+    enum Status {
+        SUCCESS = 0;
+        FAILURE = 1;
+    }
+
+    /// The end result status of the command
+    Status status = 10;
+
+    /// ID of the message that was sent to the vehicle
+    string message_id = 20;
+
+    /// The error messages as to why it failed is empty if successful
+    string failure_reason = 30;
+}
+
+// BatteryLevel is used to let the client know where the battery's health is at
+message BatteryLevel {
+    /// percentage of the battery life that is remaining
+    float remaining = 10;
+
+    /// current voltage state of the battery
+    float voltage = 20;
+}
+
+/// Status messages are used to give insight into how the vehicle is operating
+message Status {
+    oneof status {
+        Posture posture = 10;
+        BatteryLevel battery_level = 20;
+        hal.NetworkHealthTelemetry network_health = 30;
+    }
+}
+
+/// BodyPosition is used to tell the vehicles positioning irrespective of ground plane
+message Posture {
+    /// vehicles current slew in radians
+    float slew = 10;
+
+    /// height of the right side of the zstage in meters from 0.0 to 0.4
+    float right_height = 20;
+
+    /// height of the left side of the zstage in meters from 0.0 to 0.4
+    float left_height = 30;
+}

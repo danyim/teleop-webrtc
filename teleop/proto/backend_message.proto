@@ -1,0 +1,132 @@
+syntax = "proto3";
+
+import "packages/core/proto/timestamp.proto";
+import "packages/teleop/proto/webrtc.proto";
+
+package teleop;
+
+// BackendMessage is the message sent from backend to vehicle. It is the top-
+// level protobuf that encompasses the entirety of each websocket frames.
+message BackendMessage {
+    /// ID identifies this message and is used for confirmations
+    string id = 1;
+
+    /// Payload contains one of the possible messages exchanged between the
+    /// vehicle and the backend
+    oneof payload {
+        PointAndGoCommand pointAndGo = 10;
+        JoystickCommand joystick = 20;
+        VideoRequest videoRequest = 30;
+        SDPRequest sdpRequest = 40;
+        SDPConfirmation sdpConfirmation = 50;
+        ICECandidate iceCandidate = 60;
+        DockCommand dock_command = 70;
+        StopCommand stop_command = 80;
+        ExposureCommand exposure = 90;
+        ResetExposureCommand reset_exposure = 110;
+        ZStageCommand z_stage = 120;
+        TurnInPlaceCommand turnInPlace = 130;
+        PointAndGoAndTurnInPlaceCommand pointAndGoAndTurnInPlace = 140;
+        ErrorStateResetCommand errorStateResetCommand = 150;
+    }
+}
+
+// JoystickCommand tells the vehicle to apply a specified torque and turn rate.
+message JoystickCommand {
+    // The desired velocity of the vehicle in m/s in the current direction of
+    // travel.
+    double linearVelocity = 10;
+
+    // The desired curvature.
+    double curvature = 20;
+}
+
+// TurnInPlaceCommand tells the vehicle to turn in place to a given angle in
+// radians
+message TurnInPlaceCommand {
+    // Angle in radians to turn the vehicle
+    double angleToTurnInRadians = 10;
+}
+
+// PointAndGoCommand tells the vehicle to navigate with respect to a location
+// specified in image coordinates.
+message PointAndGoCommand {
+    // operatorTimestamp is time at which the operator performed the gesture
+    // that generated this command.
+    core.SystemTimestamp operatorTimestamp = 10;
+
+    // imageTimestamp is the timestamp of the frame the operator clicked on to
+    // generate this command.
+    core.SystemTimestamp imageTimestamp = 20;
+
+    // imageX is the x-coordinate of the pixel the operator clicked on, as a
+    // fraction of the image width, with zero on the left edge and increasing
+    // left to right.
+    double imageX = 30;
+
+    // imageY is the y-coordinate of the pixel the operator clicked on, as a
+    // fraction of the image height, with zero at the top edge and increasing
+    // top to bottom.
+    double imageY = 40;
+
+    // sourceCamera is the camera that the user is seeing when they sent this request
+    string camera = 50;
+
+    // Command override will ignore any free space constraints and execute the
+    // point and go command without any checks
+    bool commandOverrideFlag = 60;
+}
+
+// PointAndGoAndTurnInPlaceCommand is a combination of the point and go and turn
+// in place command, which will signal to the vehicle to navigate to a location
+// specified in image coordinates and then turn in place after navigating
+message PointAndGoAndTurnInPlaceCommand {
+    // The point and go command
+    PointAndGoCommand pointAndGoCommand = 10;
+    // The turn in place command
+    TurnInPlaceCommand turninPlaceCommand = 20;
+}
+
+// Error state reset command. This will reset any internal errors in the
+// executor
+message ErrorStateResetCommand { core.SystemTimestamp operatorTimestamp = 10; }
+
+// DockCommand tells the vehicle to dock to a docking station
+// specified by the station id.
+message DockCommand {
+    // Each station has a unique station_id[uint64]
+    // See docking_station.proto for full info about docking stations
+    uint64 station_id = 30;
+}
+
+// StopCommand tells the vehicle to cancel the previous command and stop in motion.
+message StopCommand {}
+
+// CameraExposure is used to tell the vehicle to modify the exposure rates of a camera in a given region
+message ExposureCommand {
+    // ID of the camera to expose
+    string camera_id = 20;
+
+    // x of the middle of the ROI selected to expose
+    double centerX = 30;
+
+    // y of the middle of the ROI selected to expose as a fraction of the image height
+    double centerY = 40;
+
+    // radius of the circle selected to expose as a fraction of the image width
+    double radius = 50;
+}
+
+// ResetExposureCommand is used to reset all of a cameras exposures
+message ResetExposureCommand {
+    // Id of the camera to reset
+    string camera_id = 10;
+}
+
+// ZStageCommand is used to lift the vehicle using the z stage
+// z stage commands will move to the position declared at a speed of 0.01 meters/sec
+// currently either position or left and right are set. Left and right only exist for future implementation
+message ZStageCommand {
+    // position should be between 0.0 and 0.40 representing height in meters
+    float position = 10;
+}

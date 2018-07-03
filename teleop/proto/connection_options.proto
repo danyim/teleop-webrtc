@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+package teleop;
+
+import "packages/streamer/proto/signaler_options.proto";
+import "packages/streamer/proto/stream.proto";
+import "packages/teleop/proto/camera.proto";
+
+/// VideoSource represents a camera (device, image size, etc) together with a
+/// source from which to pull that information (ZMQ address, topic, etc)
+message VideoSource {
+    /// Information about the camera from which this video source draws frames
+    Camera camera = 1;
+
+    /// Information about how to connect to this video source over ZMQ
+    streamer.Stream source = 2;
+
+    /// The ZMQ server address for modifying camera settings
+    string settings_server_address = 3;
+}
+
+/// ConnectionOptions contains configuration for teleoperation.
+message ConnectionOptions {
+    /// address of backend, e.g. "ws:///test.com"
+    string backend_address = 1;
+
+    /// ID of this vehicle for connection to backend
+    string vehicle_id = 2;
+
+    /// The token with which to authenticate
+    string auth_token = 3;
+
+    /// JPEG compression level for thumbnails uploaded to backend
+    int32 jpeg_quality = 4;
+
+    /// List of sources from which video streams can be pulled
+    repeated VideoSource video_sources = 5;
+
+    /// Options for the webrtc signaler
+    streamer.SignalerOptions webrtc = 100;
+}
